@@ -1,0 +1,57 @@
+<resources>
+
+    <string name="app_name">PopularMovies2</string>
+    <string name="settings">Settings</string>
+
+    <string name="movie_list_item_image_view_description">Movie Posters</string>
+    <string name="trailer_image_description" translatable="false">Trailer Thumbnail</string>
+
+    <string name="image_view_content_description" translatable="false">Movies posters</string>
+
+    <!-- SyncAdapter related -->
+    <string name="sync_account_type">popularmovies.kediavijay.com</string>
+    <string name="content_authority">com.kediavijay.popularmovies2.contentprovider.MovieInfoProvider</string>
+
+    <!-- Settings related -->
+    <string-array name="movie_sorting_order">
+        <item>Most Popular</item>
+        <item>Recently Released</item>
+        <item>Highest Rated</item>
+    </string-array>
+
+    <string-array name="movie_sort_order_entry_values">
+        <item>popularity</item>
+        <item>release_date</item>
+        <item>vote_average</item>
+    </string-array>
+
+    <string name="default_movie_sort_order" translatable="false">popularity</string>
+
+    <string name="movie_sort_order_key" translatable="false">SortOrder</string>
+
+    <string name="movie_sort_order_setting_title">Sort Order</string>
+
+
+    <!-- TMDB response keys -->
+    <string name="tmdb_api_result_set_key" translatable="false">results</string>
+    <string name="tmdb_discover_api_movie_id_key" translatable="false">id</string>
+    <string name="tmdb_discover_api_movie_title_key" translatable="false">title</string>
+    <string name="tmdb_discover_api_overview_key" translatable="false">overview</string>
+    <string name="tmdb_discover_api_popularity_key" translatable="false">popularity</string>
+    <string name="tmdb_discover_api_release_date_key" translatable="false">release_date</string>
+    <string name="tmdb_discover_api_ratings_key" translatable="false">vote_average</string>
+    <string name="tmdb_discover_api_poster_path_key" translatable="false">poster_path</string>
+    <string name="tmdb_movie_reviews_api_author_key" translatable="false">author</string>
+    <string name="tmdb_movie_reviews_api_content_key" translatable="false">content</string>
+    <string name="tmdb_movie_trailers_api_you_tube_video_key" translatable="false">key</string>
+
+    <!-- Some Shared preferences keys used to sync the data from Tmdb server -->
+    <string name="current_synced_page_popularity_sort_order" translatable="false">CURRENT_SYNCED_PAGE_POPULARITY_SORT_ORDER</string>
+    <string name="current_synced_page_rating_sort_order" translatable="false">CURRENT_SYNCED_PAGE_RATING_SORT_ORDER</string>
+    <string name="current_synced_page_released_date_sort_order" translatable="false">CURRENT_SYNCED_PAGE_RELEASED_DATE_SORT_ORDER</string>
+
+    <string name="total_pages_popularity_sort_order" translatable="false">TOTAL_PAGES_POPULARITY_SORT_ORDER</string>
+    <string name="total_pages_rating_sort_order" translatable="false">TOTAL_PAGES_RATING_SORT_ORDER</string>
+    <string name="total_pages_released_date_sort_order" translatable="false">TOTAL_PAGES_RELEASED_DATE_SORT_ORDER</string>
+
+</resources>

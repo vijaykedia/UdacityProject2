@@ -1,0 +1,85 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.kediavijay.popularmovies2">
+
+    <uses-permission android:name="android.permission.AUTHENTICATE_ACCOUNTS" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.READ_SYNC_SETTINGS" />
+    <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS" />
+
+    <application
+        android:name=".PopularMoviesApplication"
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+
+        <activity android:name=".activities.MovieListActivity">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+        </activity>
+
+        <activity
+            android:name=".activities.MovieDetailActivity"
+            android:parentActivityName=".activities.MovieListActivity">
+
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".activities.MovieListActivity" />
+        </activity>
+
+        <activity
+            android:name=".activities.SettingsActivity"
+            android:parentActivityName=".activities.MovieListActivity">
+
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".activities.MovieListActivity" />
+
+        </activity>
+
+
+        <!-- Content Provider -->
+        <provider
+            android:authorities="com.kediavijay.popularmovies2.contentprovider.MovieInfoProvider"
+            android:exported="false"
+            android:name=".contentprovider.MovieInfoProvider"/>
+
+        <!-- SyncAdapter's dummy authentication service -->
+        <service
+            android:name=".sync.AuthenticatorService"
+            android:exported="false">
+
+            <intent-filter>
+                <action android:name="android.accounts.AccountAuthenticator" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.accounts.AccountAuthenticator"
+                android:resource="@xml/authenticator" />
+
+        </service>
+
+        <!-- The SyncAdapter service -->
+        <service
+            android:name=".sync.SyncService"
+            android:exported="false"
+            android:process=":sync">
+
+            <intent-filter>
+                <action android:name="android.content.SyncAdapter" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.content.SyncAdapter"
+                android:resource="@xml/syncadapter" />
+
+        </service>
+
+    </application>
+
+</manifest>
