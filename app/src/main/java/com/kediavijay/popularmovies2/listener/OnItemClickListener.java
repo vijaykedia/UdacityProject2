@@ -1,9 +1,6 @@
 package com.kediavijay.popularmovies2.listener;
 
-import android.support.annotation.NonNull;
-
-import com.kediavijay.popularmovies2.adapters.MovieListAdapter;
-import com.kediavijay.popularmovies2.contentprovider.MovieInfo;
+import android.support.v7.widget.RecyclerView;
 
 /**
  * Created by vijaykedia on 14/04/16.
@@ -12,5 +9,5 @@ import com.kediavijay.popularmovies2.contentprovider.MovieInfo;
  */
 public interface OnItemClickListener {
 
-    void onItemClick(@NonNull final MovieInfo movieInfo, final MovieListAdapter.MovieImageViewHolder position);
+    void onItemClick(final RecyclerView.ViewHolder position);
 }

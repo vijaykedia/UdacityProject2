@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <item name="movie_list_layout" type="layout">@layout/recycler_view_layout</item>
+    <item name="initial_screen_layout" type="layout">@layout/movie_list_layout</item>
     <bool name="has_two_panes">false</bool>
+    <integer name="initial_screen_column_count">2</integer>
 </resources>

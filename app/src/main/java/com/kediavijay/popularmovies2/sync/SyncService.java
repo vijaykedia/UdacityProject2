@@ -37,8 +37,6 @@ public class SyncService extends Service {
                 sSyncAdapter = new SyncAdapter(getApplicationContext(), true);
             }
         }
-//        android.os.Debug.waitForDebugger();
-        System.out.print("hello");
     }
 
     /**

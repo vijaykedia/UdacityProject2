@@ -8,15 +8,41 @@ import android.support.annotation.NonNull;
 
 import com.kediavijay.popularmovies2.R;
 
+import java.util.Locale;
+
 /**
  * Created by vijaykedia on 16/04/16.
  * This will have various utility functions used across app in various modules
  */
 public class Util {
 
-    public static String determineSortOrder(@NonNull final Context context) {
+    @NonNull
+    public static String determineSortOrder(@NonNull final String selection) {
+        switch (selection) {
+            case "Most Popular":
+                return "popularity";
+            case "Recently Released":
+                return "release_date";
+            case "Highest Rated":
+                return "vote_average";
+            // Should not reach here
+            default:
+                throw new RuntimeException(String.format(Locale.ENGLISH, "determineSortOrder() -- App shouldn't reach this stage. selection passed : %s ", selection));
+        }
+    }
+
+    @NonNull
+    public static String getSortOrder(@NonNull final Context context) {
         final SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
-        return sharedPreferences.getString(context.getString(R.string.movie_sort_order_key), null);
+        return sharedPreferences.getString(context.getString(R.string.movie_sort_order_key), context.getString(R.string.default_movie_sort_order));
+    }
+
+    public static void setSortOrder(@NonNull final Context context, @NonNull final String sortOrder) {
+        final SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+        final SharedPreferences.Editor editor = sharedPreferences.edit();
+
+        editor.putString(context.getString(R.string.movie_sort_order_key), sortOrder);
+        editor.apply();
     }
 
     public static int determineCurrentPage(@NonNull final Context context, @NonNull final String sortOrder) {
@@ -92,13 +118,40 @@ public class Util {
         editor.apply();
     }
 
-    public static String getTMDBImageUrl(@NonNull final String posterPath) {
+    @NonNull
+    public static String getTMDBPosterImageUrl(@NonNull final String posterPath) {
         return String.format("%s%s%s", "http://image.tmdb.org/t/p/", "w500", posterPath);
+    }
+
+    @NonNull
+    public static String getTMDBBackdropImageUrl(@NonNull final String posterPath) {
+        return String.format("%s%s%s", "http://image.tmdb.org/t/p/", "original", posterPath);
     }
 
     public static boolean isTablet(@NonNull final Context context) {
         return (context.getResources().getConfiguration().screenLayout
                 & Configuration.SCREENLAYOUT_SIZE_MASK)
                 >= Configuration.SCREENLAYOUT_SIZE_LARGE;
+    }
+
+    public static boolean isSyncRunning(@NonNull final Context context) {
+        final SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+        return sharedPreferences.getBoolean(context.getString(R.string.sync_service_running), false);
+    }
+
+    public static void setSyncCompleted(@NonNull final Context context) {
+        final SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+        final SharedPreferences.Editor editor = sharedPreferences.edit();
+
+        editor.putBoolean(context.getString(R.string.sync_service_running), false);
+        editor.apply();
+    }
+
+    public static void setSyncRunning(@NonNull final Context context) {
+        final SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+        final SharedPreferences.Editor editor = sharedPreferences.edit();
+
+        editor.putBoolean(context.getString(R.string.sync_service_running), true);
+        editor.apply();
     }
 }

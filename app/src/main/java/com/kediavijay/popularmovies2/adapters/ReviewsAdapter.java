@@ -1,8 +1,8 @@
 package com.kediavijay.popularmovies2.adapters;
 
-import android.net.Uri;
+import android.database.Cursor;
 import android.support.annotation.NonNull;
-import android.support.v4.util.Pair;
+import android.support.annotation.Nullable;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -10,22 +10,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import com.android.volley.Request;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.JsonObjectRequest;
-import com.kediavijay.popularmovies2.BuildConfig;
-import com.kediavijay.popularmovies2.PopularMoviesApplication;
-import com.kediavijay.popularmovies2.PopularMoviesConstants;
 import com.kediavijay.popularmovies2.R;
+import com.kediavijay.popularmovies2.contentprovider.ReviewTable;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
+import butterknife.Bind;
+import butterknife.ButterKnife;
 
 /**
  * Created by vijaykedia on 10/04/16.
@@ -35,42 +24,13 @@ public class ReviewsAdapter extends RecyclerView.Adapter<ReviewsAdapter.ReviewVi
 
     private static final String LOG_TAG = ReviewsAdapter.class.getSimpleName();
 
-    private int movieId;
-    private final List<Pair<String, String>> reviews = new ArrayList<>();
+    private Cursor cursor;
 
     /**
      * Default Constructor
      */
-    public ReviewsAdapter(){
-    }
-
-    public void setMovieId(final int movieId) {
-        this.movieId = movieId;
-
-        final String url = Uri.parse(String.format(Locale.ENGLISH, PopularMoviesConstants.TMDB_MOVIE_REVIEWS_BASE_URL, this.movieId))
-                .buildUpon()
-                .appendQueryParameter(PopularMoviesConstants.TMDB_DISCOVER_API_KEY, BuildConfig.THE_MOVIE_DB_API_KEY)
-                .build().toString();
-
-        Log.i(LOG_TAG, String.format(Locale.ENGLISH, "url called : %s", url));
-
-        final JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
-                new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(@NonNull final JSONObject response) {
-                        updateDataSource(response);
-                        notifyDataSetChanged();
-                    }
-                },
-                new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(@NonNull final VolleyError error) {
-                        Log.e(LOG_TAG, String.format(Locale.ENGLISH, "Failed to get review for movie with id %d", movieId), error);
-                    }
-                }
-        );
-
-        PopularMoviesApplication.getInstance().getRequestQueue().add(request);
+    public ReviewsAdapter(@Nullable final Cursor cursor) {
+        this.cursor = cursor;
     }
 
     @Override
@@ -78,7 +38,7 @@ public class ReviewsAdapter extends RecyclerView.Adapter<ReviewsAdapter.ReviewVi
 
         Log.i(LOG_TAG, "onCreateViewHolder() -- Creating review item view holder.");
 
-        final View itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.movie_review_layout, parent, false);
+        final View itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.movie_review_item_layout, parent, false);
         return new ReviewViewHolder(itemView);
     }
 
@@ -87,37 +47,35 @@ public class ReviewsAdapter extends RecyclerView.Adapter<ReviewsAdapter.ReviewVi
 
         Log.i(LOG_TAG, "onBindViewHolder() -- Updating ReviewViewHolder wih review content.");
 
-        final Pair<String, String> review = reviews.get(position);
-        holder.author.setText(review.first);
-        holder.content.setText(review.second);
+        cursor.moveToPosition(position);
+
+        holder.author.setText(cursor.getString(cursor.getColumnIndex(ReviewTable.FIELD_AUTHOR)));
+        holder.content.setText(cursor.getString(cursor.getColumnIndex(ReviewTable.FIELD_CONTENT)));
     }
 
     @Override
     public int getItemCount() {
-        return reviews.size();
+        if (cursor != null) {
+            cursor.getCount();
+        }
+        return 0;
     }
 
-    private void updateDataSource(@NonNull final JSONObject response) {
-        try {
-            final JSONArray result = response.getJSONArray(PopularMoviesConstants.TMDB_API_RESPONSE_RESULTS_KEY);
-            for (int i = 0; i < result.length(); i++) {
-                final JSONObject reviewItem = result.getJSONObject(i);
-                reviews.add(new Pair<>(reviewItem.getString(PopularMoviesConstants.REVIEW_AUTHOR_KEY), reviewItem.getString(PopularMoviesConstants.REVIEW_CONTENT_KEY)));
-            }
-        } catch (final JSONException e) {
-            Log.e(LOG_TAG, String.format(Locale.ENGLISH, "Failed to parse tmdb response for fetching reviews for movie with id %d", movieId), e);
-        }
+    public void swapCursor(@Nullable final Cursor cursor) {
+        this.cursor = cursor;
+        notifyDataSetChanged();
     }
 
     public class ReviewViewHolder extends RecyclerView.ViewHolder {
 
-        private final TextView author;
-        private final TextView content;
+        @Bind(R.id.review_author)
+        public TextView author;
+        @Bind(R.id.review_content)
+        public TextView content;
 
         public ReviewViewHolder(@NonNull final View itemView) {
             super(itemView);
-            author = (TextView) itemView.findViewById(R.id.review_author);
-            content = (TextView) itemView.findViewById(R.id.review_content);
+            ButterKnife.bind(this, itemView);
         }
     }
 }

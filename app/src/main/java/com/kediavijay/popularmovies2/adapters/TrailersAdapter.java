@@ -1,31 +1,21 @@
 package com.kediavijay.popularmovies2.adapters;
 
-import android.net.Uri;
+import android.database.Cursor;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageButton;
+import android.widget.TextView;
 
-import com.android.volley.Request;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.ImageLoader;
-import com.android.volley.toolbox.JsonObjectRequest;
-import com.kediavijay.popularmovies2.BuildConfig;
-import com.kediavijay.popularmovies2.PopularMoviesApplication;
-import com.kediavijay.popularmovies2.PopularMoviesConstants;
 import com.kediavijay.popularmovies2.R;
+import com.kediavijay.popularmovies2.contentprovider.TrailerTable;
+import com.kediavijay.popularmovies2.listener.OnItemClickListener;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
+import butterknife.Bind;
+import butterknife.ButterKnife;
 
 /**
  * Created by vijaykedia on 10/04/16.
@@ -35,57 +25,15 @@ public class TrailersAdapter extends RecyclerView.Adapter<TrailersAdapter.Traile
 
     private static final String LOG_TAG = TrailersAdapter.class.getSimpleName();
 
-    private final ImageLoader imageLoader;
-    private final List<String> trailers = new ArrayList<>();
-
-    private int movieId;
+    private final OnItemClickListener listener;
+    private Cursor cursor;
 
     /**
      * Default Constructor
      */
-    public TrailersAdapter() {
-        imageLoader = PopularMoviesApplication.getInstance().getImageLoader();
-    }
-
-    public void setMovieId(final int movieId) {
-        this.movieId = movieId;
-
-        final String url = Uri.parse(String.format(Locale.ENGLISH, PopularMoviesConstants.TMDB_MOVIE_TRAILERS_BASE_URL, this.movieId))
-                .buildUpon()
-                .appendQueryParameter(PopularMoviesConstants.TMDB_DISCOVER_API_KEY, BuildConfig.THE_MOVIE_DB_API_KEY)
-                .build().toString();
-
-        final JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
-                new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(@NonNull final JSONObject response) {
-                        updateDataSource(response);
-                        notifyDataSetChanged();
-                    }
-                },
-                new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(@NonNull final VolleyError error) {
-                        Log.e(LOG_TAG, String.format(Locale.ENGLISH, "Failed to get trailers/videos for movie with id %d", movieId), error);
-                    }
-                }
-        );
-
-        PopularMoviesApplication.getInstance().getRequestQueue().add(request);
-    }
-
-    private void updateDataSource(@NonNull final JSONObject response) {
-
-        try {
-            final JSONArray result = response.getJSONArray(PopularMoviesConstants.TMDB_API_RESPONSE_RESULTS_KEY);
-            for (int i = 0; i < result.length(); i++) {
-                final JSONObject trailerInfo = result.getJSONObject(i);
-                trailers.add(trailerInfo.getString(PopularMoviesConstants.TRAILER_KEY));
-            }
-        } catch (final JSONException e) {
-            Log.e(LOG_TAG, String.format(Locale.ENGLISH, "Failed to parse tmdb response for fetching trailers for movie with id %d", movieId), e);
-        }
-
+    public TrailersAdapter(@Nullable final Cursor cursor, @NonNull final OnItemClickListener listener) {
+        this.cursor = cursor;
+        this.listener = listener;
     }
 
     @Override
@@ -93,31 +41,58 @@ public class TrailersAdapter extends RecyclerView.Adapter<TrailersAdapter.Traile
 
         Log.i(LOG_TAG, "onCreateViewHolder() -- Creating trailer item view holder.");
 
-        final View itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.movie_trailer_layout, parent, false);
+        final View itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.movie_trailer_item_layout, parent, false);
         return new TrailerViewHolder(itemView);
     }
 
     @Override
-    public void onBindViewHolder(TrailerViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull final TrailerViewHolder holder, final int position) {
 
         Log.i(LOG_TAG, "onBindViewHolder() -- Updating TrailerViewHolder wih trailers.");
 
-        final String youtubeUrl = String.format(Locale.ENGLISH, "%s%s%s", "http://img.youtube.com/vi/", trailers.get(position), "/hqdefault.jpg");
-        imageLoader.get(youtubeUrl, ImageLoader.getImageListener(holder.imageButton, R.drawable.image_load_placeholder, android.R.drawable.ic_dialog_alert));
+        cursor.moveToPosition(position);
+        holder.bind(holder, cursor);
     }
 
     @Override
     public int getItemCount() {
-        return trailers.size();
+        if (cursor != null) {
+            return cursor.getCount();
+        }
+        return 0;
+    }
+
+    public void swapCursor(@Nullable final Cursor cursor) {
+        this.cursor = cursor;
+        notifyDataSetChanged();
     }
 
     public class TrailerViewHolder extends RecyclerView.ViewHolder {
 
-        private final ImageButton imageButton;
+        @Bind(R.id.movie_trailer_name) public TextView trailerName;
+
+        private String key;
 
         public TrailerViewHolder(@NonNull final View itemView) {
             super(itemView);
-            imageButton = (ImageButton) itemView.findViewById(R.id.trailer_image_button);
+            ButterKnife.bind(this, itemView);
+        }
+
+        public void bind(@NonNull final TrailerViewHolder holder, @NonNull final Cursor cursor) {
+
+            trailerName.setText(cursor.getString(cursor.getColumnIndex(TrailerTable.FIELD_NAME)));
+            key = cursor.getString(cursor.getColumnIndex(TrailerTable.FIELD_KEY));
+
+            itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(@NonNull final View v) {
+                    listener.onItemClick(holder);
+                }
+            });
+        }
+
+        public String getKey() {
+            return key;
         }
     }
 }

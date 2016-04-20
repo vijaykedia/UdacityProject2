@@ -13,10 +13,12 @@ import com.android.volley.toolbox.ImageLoader;
 import com.android.volley.toolbox.NetworkImageView;
 import com.kediavijay.popularmovies2.PopularMoviesApplication;
 import com.kediavijay.popularmovies2.R;
-import com.kediavijay.popularmovies2.contentprovider.MovieInfo;
 import com.kediavijay.popularmovies2.contentprovider.MovieInfoTable;
 import com.kediavijay.popularmovies2.listener.OnItemClickListener;
 import com.kediavijay.popularmovies2.util.Util;
+
+import butterknife.Bind;
+import butterknife.ButterKnife;
 
 /**
  * Created by vijaykedia on 10/04/16.
@@ -45,7 +47,7 @@ public class MovieListAdapter extends RecyclerView.Adapter<MovieListAdapter.Movi
     @Override
     public MovieImageViewHolder onCreateViewHolder(@NonNull final ViewGroup parent, final int viewType) {
 
-        final View itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.movie_thumbnail_layout, parent, false);
+        final View itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.movie_list_item_layout, parent, false);
         return new MovieImageViewHolder(itemView);
     }
 
@@ -55,18 +57,7 @@ public class MovieListAdapter extends RecyclerView.Adapter<MovieListAdapter.Movi
         Log.v(LOG_TAG, "onBindViewHolder() -- Binding MovieImageViewHolder to MovieListAdapter");
 
         cursor.moveToPosition(position);
-        final MovieInfo movieInfo = MovieInfoTable.getRow(cursor, false);
-
-        final String url = Util.getTMDBImageUrl(movieInfo.posterPath);
-
-        imageLoader.get(url, ImageLoader.getImageListener(holder.imageView, R.drawable.image_load_placeholder, android.R.drawable.ic_dialog_alert));
-        holder.imageView.setImageUrl(url, imageLoader);
-        holder.imageView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(@NonNull final View v) {
-                listener.onItemClick(movieInfo, holder);
-            }
-        });
+        holder.bind(holder, cursor);
     }
 
     @Override
@@ -82,13 +73,37 @@ public class MovieListAdapter extends RecyclerView.Adapter<MovieListAdapter.Movi
         notifyDataSetChanged();
     }
 
-    public static class MovieImageViewHolder extends RecyclerView.ViewHolder {
+    public class MovieImageViewHolder extends RecyclerView.ViewHolder {
 
-        private final NetworkImageView imageView;
+        @Bind(R.id.movie_list_item_image_view) public NetworkImageView imageView;
+
+        private int movieId;
 
         public MovieImageViewHolder(@NonNull final View itemView) {
             super(itemView);
-            imageView = (NetworkImageView) itemView.findViewById(R.id.movie_list_item_image_view);
+            ButterKnife.bind(this, itemView);
+        }
+
+        public int getMovieId() {
+            return movieId;
+        }
+
+        public void bind(@NonNull final MovieImageViewHolder holder, @NonNull final Cursor cursor) {
+            movieId = cursor.getInt(cursor.getColumnIndex(MovieInfoTable.FIELD_MOVIE_ID));
+
+            final String posterPath = cursor.getString(cursor.getColumnIndex(MovieInfoTable.FIELD_POSTER_PATH));
+
+            final String url = Util.getTMDBPosterImageUrl(posterPath);
+
+            imageLoader.get(url, ImageLoader.getImageListener(holder.imageView, R.drawable.image_load_placeholder, android.R.drawable.ic_dialog_alert));
+            holder.imageView.setImageUrl(url, imageLoader);
+
+            holder.imageView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(@NonNull final View v) {
+                    listener.onItemClick(holder);
+                }
+            });
         }
     }
 }

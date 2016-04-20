@@ -7,13 +7,13 @@ import android.util.Log;
 
 import com.kediavijay.popularmovies2.PopularMoviesConstants;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -35,6 +35,9 @@ public class MovieInfo implements Parcelable {
     @SimpleSQLColumn(value = "movie_id", primary = true)
     public int movieId;
 
+    @SimpleSQLColumn(value = "imdb_id")
+    public String imdbId;
+
     @SimpleSQLColumn(value = "title")
     public String title;
 
@@ -44,14 +47,23 @@ public class MovieInfo implements Parcelable {
     @SimpleSQLColumn(value = "popularity")
     public double popularity;
 
+    @SimpleSQLColumn(value = "genre")
+    public String genre;
+
     @SimpleSQLColumn(value = "release_date")
     public long releaseDate;
 
     @SimpleSQLColumn(value = "poster_path")
     public String posterPath;
 
+    @SimpleSQLColumn(value = "backdrop_path")
+    public String backdrop_path;
+
     @SimpleSQLColumn(value = "vote_average")
     public double rating;
+
+    @SimpleSQLColumn(value = "runtime")
+    public int runtime;
 
     @SimpleSQLColumn(value = "favourite")
     public boolean favourite;
@@ -68,10 +80,20 @@ public class MovieInfo implements Parcelable {
 
     public MovieInfo(@NonNull final JSONObject response) {
         try {
-            movieId = response.getInt(PopularMoviesConstants.MOVIE_ID_KEY);
+
+            movieId = response.getInt(PopularMoviesConstants.TMDB_API_RESPONSE_ID_KEY);
+            imdbId = response.getString(PopularMoviesConstants.IMDB_ID_KEY);
             title = response.getString(PopularMoviesConstants.MOVIE_TITLE_KEY);
             overview = response.getString(PopularMoviesConstants.MOVIE_OVERVIEW_KEY);
             popularity = response.getDouble(PopularMoviesConstants.MOVIE_POPULARITY_KEY);
+
+            final StringBuilder genres = new StringBuilder();
+            final JSONArray genreList = response.getJSONArray(PopularMoviesConstants.MOVIE_GENRE_KEY);
+            for (int i = 0; i < genreList.length(); i++) {
+                final JSONObject temp = genreList.getJSONObject(i);
+                genres.append(temp.getString("name"));
+            }
+            genre = genres.toString();
 
             try {
                 final Date date = dateFormatter.parse(response.getString(PopularMoviesConstants.MOVIE_RELEASE_DATE_KEY));
@@ -80,8 +102,11 @@ public class MovieInfo implements Parcelable {
             }
 
             posterPath = response.getString(PopularMoviesConstants.MOVIE_POSTER_PATH_KEY);
+            backdrop_path = response.getString(PopularMoviesConstants.MOVIE_BACKDROP_PATH_KEY);
             rating = response.getDouble(PopularMoviesConstants.MOVIE_USER_RATING_KEY);
+            runtime = response.getInt(PopularMoviesConstants.MOVIE_RUNTIME_KEY);
             favourite = false;
+
         } catch (final JSONException e) {
             Log.e(LOG_TAG, "Failed to parse result and create movieInfo object", e);
         }
@@ -96,12 +121,8 @@ public class MovieInfo implements Parcelable {
         posterPath = in.readString();
         rating = in.readDouble();
         favourite = in.readByte() != 0;
-
-        final Review[] reviewArray = (Review[]) in.readParcelableArray(Review.class.getClassLoader());
-        reviews = Arrays.asList(reviewArray);
-
-        final String[] trailerUrls = (String[]) in.readArray(String.class.getClassLoader());
-        trailers = Arrays.asList(trailerUrls);
+        in.readTypedList(reviews, Review.CREATOR);
+        in.readStringList(trailers);
     }
 
     @Override
@@ -114,17 +135,11 @@ public class MovieInfo implements Parcelable {
         dest.writeString(posterPath);
         dest.writeDouble(rating);
         dest.writeByte((byte) (favourite ? 1 : 0));
-
-        final Review[] reviewArray = new Review[reviews.size()];
-        reviews.toArray(reviewArray);
-        dest.writeParcelableArray(reviewArray, flags);
-
-        final String[] trailerUrls = new String[trailers.size()];
-        trailers.toArray(trailerUrls);
-        dest.writeStringArray(trailerUrls);
+        dest.writeTypedList(reviews);
+        dest.writeStringList(trailers);
     }
 
-    public void addReview(@NonNull final Review review ) {
+    public void addReview(@NonNull final Review review) {
         reviews.add(review);
     }
 

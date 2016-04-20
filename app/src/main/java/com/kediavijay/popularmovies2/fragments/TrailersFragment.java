@@ -1,10 +1,17 @@
 package com.kediavijay.popularmovies2.fragments;
 
+import android.content.ActivityNotFoundException;
 import android.content.Context;
+import android.content.Intent;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -15,7 +22,13 @@ import android.view.ViewGroup;
 
 import com.kediavijay.popularmovies2.PopularMoviesConstants;
 import com.kediavijay.popularmovies2.R;
+import com.kediavijay.popularmovies2.adapters.MovieListAdapter;
 import com.kediavijay.popularmovies2.adapters.TrailersAdapter;
+import com.kediavijay.popularmovies2.contentprovider.TrailerTable;
+import com.kediavijay.popularmovies2.listener.OnItemClickListener;
+
+import butterknife.Bind;
+import butterknife.ButterKnife;
 
 /**
  * Created by vijaykedia on 15/04/16.
@@ -25,13 +38,19 @@ public class TrailersFragment extends Fragment {
 
     private static final String LOG_TAG = TrailersFragment.class.getSimpleName();
 
+    @Bind(R.id.recycler_view) public RecyclerView recyclerView;
+
     private TrailersAdapter adapter;
+
+    private static final int LOADER_ID = 30;
+    private TrailersLoaderCallbacks loader;
 
     /**
      * Default constructor
      */
     public TrailersFragment() {
-        adapter = new TrailersAdapter();
+        adapter = new TrailersAdapter(null, new TrailerItemOnClickListener());
+        loader = new TrailersLoaderCallbacks();
     }
 
     @Override
@@ -56,13 +75,15 @@ public class TrailersFragment extends Fragment {
 
         Log.i(LOG_TAG, "onCreateView() -- Creating view hierarchy(Recycler view) associated with TrailersFragment.");
 
-        final RecyclerView recyclerView = (RecyclerView) inflater.inflate(R.layout.recycler_view_layout, container, false);
+        final View rootView = inflater.inflate(R.layout.recycler_view_layout, container, false);
+        ButterKnife.bind(this, rootView);
+
         recyclerView.setAdapter(adapter);
 
-        recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
+        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         recyclerView.setItemAnimator(new DefaultItemAnimator());
 
-        return recyclerView;
+        return rootView;
     }
 
     @Override
@@ -74,8 +95,7 @@ public class TrailersFragment extends Fragment {
 
         final Bundle bundle = getArguments();
         if (bundle != null) {
-            final int movieId = bundle.getInt(PopularMoviesConstants.MOVIE_ID);
-            adapter.setMovieId(movieId);
+            getLoaderManager().initLoader(LOADER_ID, bundle, loader);
         }
     }
 
@@ -117,6 +137,7 @@ public class TrailersFragment extends Fragment {
         Log.i(LOG_TAG, "onDestroyView() -- View hierarchy associated with TrailersFragment is being removed");
 
         super.onDestroyView();
+        ButterKnife.unbind(this);
     }
 
     @Override
@@ -133,5 +154,77 @@ public class TrailersFragment extends Fragment {
         Log.i(LOG_TAG, "onDetach() -- TrailersFragment is being disassociated from the activity");
 
         super.onDetach();
+    }
+
+    /**
+     * This class will define the loader callbacks which will be called by {@link LoaderManager} who is responsible
+     * for keeping {@link CursorLoader} in line with the lifecycle of hosting activity and {@link TrailersFragment}
+     */
+    private class TrailersLoaderCallbacks implements LoaderManager.LoaderCallbacks<Cursor> {
+
+        /**
+         * This method is called whenever {@link LoaderManager#initLoader(int, Bundle, LoaderManager.LoaderCallbacks)} or
+         * {@link LoaderManager#restartLoader(int, Bundle, LoaderManager.LoaderCallbacks)} is called.
+         *
+         * @param id   id which was passed in {@link LoaderManager#initLoader(int, Bundle, LoaderManager.LoaderCallbacks)}
+         * @param args Optional args which need to initialize loader
+         * @return instance of {@link CursorLoader}
+         */
+        @Override
+        public Loader<Cursor> onCreateLoader(final int id, @NonNull final Bundle args) {
+
+            Log.d(LOG_TAG, "onCreateLoader() -- Creating movie info cursor loader");
+
+            final Uri uri = TrailerTable.CONTENT_URI;
+
+            final int movieId = args.getInt(PopularMoviesConstants.MOVIE_ID);
+            return new CursorLoader(getContext(), uri, new String[] {TrailerTable.FIELD_KEY, TrailerTable.FIELD_NAME}, TrailerTable.FIELD_MOVIE_ID + " = ?", new String[]{Integer.toString(movieId)}, null);
+        }
+
+        /**
+         * Here we notify {@link MovieListAdapter} to update itself, so that it can populate the imageViews
+         *
+         * @param loader The Loader that has finished.
+         * @param data   The data generated by the Loader.
+         */
+        @Override
+        public void onLoadFinished(@NonNull final Loader<Cursor> loader, @Nullable final Cursor data) {
+
+            Log.d(LOG_TAG, "onLoadFinished() -- Loader is finished loading data. Update adapter to refresh trailers UI");
+
+            adapter.swapCursor(data);
+        }
+
+        /**
+         * Called when previous created loader is being reset
+         *
+         * @param loader The Loader that is being reset.
+         */
+        @Override
+        public void onLoaderReset(@NonNull final Loader<Cursor> loader) {
+
+            Log.d(LOG_TAG, "onLoaderReset() -- Resetting cursor");
+
+            adapter.swapCursor(null);
+        }
+    }
+
+    private class TrailerItemOnClickListener implements OnItemClickListener {
+
+        @Override
+        public void onItemClick(@NonNull final RecyclerView.ViewHolder holder) {
+
+            Log.d(LOG_TAG, "onItemClick() -- User is trying to open the trailer.");
+
+            final String trailerKey = ((TrailersAdapter.TrailerViewHolder)holder).getKey();
+
+            try {
+                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("vnd.youtube:" + trailerKey));
+                startActivity(intent);
+            } catch (final ActivityNotFoundException ex) {
+                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://www.youtube.com/watch?v=" + trailerKey));
+                startActivity(intent);
+            }
+        }
     }
 }
